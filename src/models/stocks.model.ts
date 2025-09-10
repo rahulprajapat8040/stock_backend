@@ -13,7 +13,7 @@ export class Stocks extends Model<Stocks, Partial<Stocks>> {
     declare stockTime: Date
     @Column(DataType.STRING)
     declare stockPrices: string
-    @Default(false)
+    @Default(true)
     @Column(DataType.BOOLEAN)
-    declare isPublic: false
+    declare isPublic: boolean
 }

@@ -21,20 +21,39 @@ export class StockService {
         }
     }
 
-    async getAllStocks(date: Date) {
+    async getAllStocks(date: Date, time?: string) {
         try {
-            const startOfDay = new Date(date);
-            startOfDay.setHours(0, 0, 0, 0);
+            let whereCondition: any = {};
+            console.log(time)
+            if (time) {
+                // Combine date + time
+                const selectedDateTime = new Date(`${date} ${time}`);
 
-            const endOfDay = new Date(date);
-            endOfDay.setHours(23, 59, 59, 999);
+                // Exact timestamp or small range (here: ± 59 seconds)
+                const startTime = new Date(selectedDateTime);
+                startTime.setSeconds(0, 0);
+
+                const endTime = new Date(selectedDateTime);
+                endTime.setSeconds(59, 999);
+
+                whereCondition.stockTime = {
+                    [Op.between]: [startTime, endTime],
+                };
+            } else {
+                // Whole day
+                const startOfDay = new Date(date);
+                startOfDay.setHours(0, 0, 0, 0);
+
+                const endOfDay = new Date(date);
+                endOfDay.setHours(23, 59, 59, 999);
+
+                whereCondition.stockTime = {
+                    [Op.between]: [startOfDay, endOfDay],
+                };
+            }
 
             const res = await this.stockModel.findAll({
-                where: {
-                    stockTime: {
-                        [Op.between]: [startOfDay, endOfDay]
-                    }
-                },
+                where: whereCondition,
                 order: [["stockTime", "ASC"]],
             });
 
@@ -43,6 +62,7 @@ export class StockService {
             throw new BadRequestException(error.message);
         }
     }
+
     async createBulkStocks(stocks: { stockTime: Date; stockPrices: string }[]) {
         try {
             await this.stockModel.bulkCreate(stocks, {
@@ -81,33 +101,51 @@ export class StockService {
     }
 
 
-    async getStocksTillNow(date?: string | Date) {
+    async getStocksTillNow(date?: string | Date, time?: string) {
         try {
             // Ensure date is provided
+            let whereCondition: any = {};
             if (!date) {
                 throw new BadRequestException("Date is required");
             }
 
+            if (time) {
+                // Combine date + time
+                const selectedDateTime = new Date(`${date} ${time}`);
+
+                // Exact timestamp or small range (here: ± 59 seconds)
+                const startTime = new Date(selectedDateTime);
+                startTime.setSeconds(0, 0);
+
+                const endTime = new Date(selectedDateTime);
+                endTime.setSeconds(59, 999);
+
+                whereCondition.stockTime = {
+                    [Op.between]: [startTime, endTime],
+                }
+            } else {
+                const istMoment = moment(date, moment.ISO_8601, true).utcOffset("+00:00");                // Get the start of the day in IST and convert to UTC for filtering
+                const startOfDayUtc = istMoment.clone().startOf("day").utc().toDate();
+
+                // Get the exact provided time in IST and convert to UTC
+                const endTimeUtc = istMoment.clone().utc().toDate();
+                whereCondition.stockTime = {
+                    [Op.gte]: startOfDayUtc, // Greater than or equal to start of day
+                    [Op.lte]: endTimeUtc,
+                }
+            }
+            console.log({ whereCondition })
             // Convert the provided date to IST (UTC +05:30)
-            const istMoment = moment(date, moment.ISO_8601, true).utcOffset("+05:30");
-
-            // Get the start of the day in IST and convert to UTC for filtering
-            const startOfDayUtc = istMoment.clone().startOf("day").utc().toDate();
-
-            // Get the exact provided time in IST and convert to UTC
-            const endTimeUtc = istMoment.clone().utc().toDate();
 
             // Log for debugging (optional)
-            console.log("Start of day in UTC:", startOfDayUtc);
-            console.log("End time in UTC:", endTimeUtc);
+            // console.log("Start of day in UTC:", startOfDayUtc);
+            // console.log("End time in UTC:", endTimeUtc);
 
             // Query the database for stocks within the time range
             const res = await this.stockModel.findAll({
                 where: {
-                    stockTime: {
-                        [Op.gte]: startOfDayUtc, // Greater than or equal to start of day
-                        [Op.lte]: endTimeUtc,    // Less than or equal to provided time
-                    },
+                    ...whereCondition,
+                    isPublic: true
                 },
                 order: [["stockTime", "ASC"]], // Order by stockTime in ascending order
             });
@@ -129,6 +167,28 @@ export class StockService {
             }
             await res.update({ stockTime, stockPrices });
             return responseSender(STRINGCONST.DATA_UPDATED, HttpStatus.OK, true, res)
+        } catch (error) {
+            throw new BadRequestException(error.message)
+        }
+    }
+
+    async editStockStatus(stockId: string, isPublic: boolean) {
+        try {
+            const res = await this.stockModel.findByPk(stockId);
+            if (!res) {
+                throw new NotFoundException(STRINGCONST.DATA_NOT_FOUND)
+            }
+            await res.update({ isPublic })
+            return responseSender(STRINGCONST.DATA_FETCHED, HttpStatus.OK, true, null)
+        } catch (error) {
+            throw new BadRequestException(error.message)
+        }
+    }
+
+    async deleteStock(stockId: string) {
+        try {
+            await this.stockModel.destroy({ where: { id: stockId } })
+            return responseSender(STRINGCONST.DATA_FETCHED, HttpStatus.OK, true, null)
         } catch (error) {
             throw new BadRequestException(error.message)
         }

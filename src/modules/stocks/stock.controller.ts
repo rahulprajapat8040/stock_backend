@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Post, Put, Query } from "@nestjs/common";
 import { StockService } from "./stock.service";
 
 @Controller('stock')
@@ -17,7 +17,7 @@ export class StockController {
 
     @Get('get-stock-by-id')
     async getStockById(
-        @Query('stockId') stockId: string
+        @Query('stockId') stockId: string,
     ) {
         return this.stockService.getStockById(stockId)
     }
@@ -32,9 +32,10 @@ export class StockController {
 
     @Get('get-stock-till-now')
     async getStocksTillNow(
-        @Query('date') date: Date
+        @Query('date') date: Date,
+        @Query('time') time: string
     ) {
-        return this.stockService.getStocksTillNow(date)
+        return this.stockService.getStocksTillNow(date, time)
     }
 
     @Post('create-bulk')
@@ -45,7 +46,25 @@ export class StockController {
     }
 
     @Get('get-all-stocks')
-    async getAllStocks(@Query('date') date: Date) {
-        return this.stockService.getAllStocks(date)
+    async getAllStocks(
+        @Query('date') date: Date,
+        @Query('time') time: string
+    ) {
+        return this.stockService.getAllStocks(date, time)
+    }
+
+    @Put('update-stock-status')
+    async updateStockStatus(
+        @Query('stockId') stockId: string,
+        @Body('isPublic') isPublic: boolean
+    ) {
+        return this.stockService.editStockStatus(stockId, isPublic)
+    }
+
+    @Delete('delete-stock')
+    async deleteStock(
+        @Query('stockId') stockId: string
+    ) {
+        return this.stockService.deleteStock(stockId)
     }
 }
