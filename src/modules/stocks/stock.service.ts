@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConsoleLogger, HttpStatus, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/sequelize";
 import { Op } from "sequelize";
 import { Stocks } from "src/models";
@@ -34,10 +34,22 @@ export class StockService {
                     stockTime: {
                         [Op.between]: [startOfDay, endOfDay]
                     }
-                }
+                },
+                order: [["stockTime", "ASC"]],
             });
 
             return responseSender(STRINGCONST.DATA_FETCHED, HttpStatus.OK, true, res);
+        } catch (error) {
+            throw new BadRequestException(error.message);
+        }
+    }
+    async createBulkStocks(stocks: { stockTime: Date; stockPrices: string }[]) {
+        try {
+            await this.stockModel.bulkCreate(stocks, {
+                ignoreDuplicates: true, // avoid duplicate stockTime inserts
+                validate: true,
+            });
+            return responseSender(STRINGCONST.STOCK_CREATED, HttpStatus.CREATED, true, null)
         } catch (error) {
             throw new BadRequestException(error.message);
         }

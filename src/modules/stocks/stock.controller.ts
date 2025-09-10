@@ -37,6 +37,13 @@ export class StockController {
         return this.stockService.getStocksTillNow(date)
     }
 
+    @Post('create-bulk')
+    async createBulk(@Body('stocks') stocks: { stockTime: Date; stockPrices: string }[]) {
+        {
+            return this.stockService.createBulkStocks(stocks)
+        }
+    }
+
     @Get('get-all-stocks')
     async getAllStocks(@Query('date') date: Date) {
         return this.stockService.getAllStocks(date)

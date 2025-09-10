@@ -1,4 +1,4 @@
-import { BadRequestException, HttpStatus, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, HttpStatus, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { InjectModel } from "@nestjs/sequelize";
 import { User } from "src/models";
@@ -6,6 +6,7 @@ import * as bcrypt from 'bcryptjs';
 import STRINGCONST from "src/utils/common/stringConst";
 import { responseSender } from "src/utils/helper/funcation.helper";
 import { UserInfoDTO } from "./auth.dto";
+import { Request } from "express";
 
 @Injectable()
 export class AuthService {
@@ -49,6 +50,24 @@ export class AuthService {
             return responseSender(STRINGCONST.USER_UPDATE, HttpStatus.OK, true, user)
         } catch (error) {
             throw new InternalServerErrorException(error.message)
+        }
+    }
+
+    async validateToken(req: Request) {
+        try {
+            const token = req.headers.authorization?.split(" ")[1];
+            if (!token) throw new UnauthorizedException("No token provided");
+
+            const payload = this.jwtService.verify(token, { secret: process.env.JWT_ACCESS_TOKEN_KEY }) as any;
+            const user = await this.userModel.findByPk(payload.userId);
+
+            // Check if the token matches the one stored in DB
+            if (!user || user.accessToken !== token) {
+                throw new UnauthorizedException("Session invalid");
+            }
+            return { valid: true };
+        } catch (error) {
+            throw new BadRequestException(error.message)
         }
     }
 }
