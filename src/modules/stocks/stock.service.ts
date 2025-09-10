@@ -109,22 +109,8 @@ export class StockService {
                 throw new BadRequestException("Date is required");
             }
 
-            if (time) {
-                // Combine date + time
-                const selectedDateTime = new Date(`${date} ${time}`);
-
-                // Exact timestamp or small range (here: ± 59 seconds)
-                const startTime = new Date(selectedDateTime);
-                startTime.setSeconds(0, 0);
-
-                const endTime = new Date(selectedDateTime);
-                endTime.setSeconds(59, 999);
-
-                whereCondition.stockTime = {
-                    [Op.between]: [startTime, endTime],
-                }
-            } else {
-                const istMoment = moment(date, moment.ISO_8601, true).utcOffset("+00:00");                // Get the start of the day in IST and convert to UTC for filtering
+            else {
+                const istMoment = moment(date, moment.ISO_8601, true).utcOffset("+05:30");                // Get the start of the day in IST and convert to UTC for filtering
                 const startOfDayUtc = istMoment.clone().startOf("day").utc().toDate();
 
                 // Get the exact provided time in IST and convert to UTC
