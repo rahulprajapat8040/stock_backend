@@ -111,7 +111,7 @@ export class StockService {
 
             if (time) {
                 // Parse date + time in IST
-                const istMoment = moment(`${date} ${time}`, "YYYY-MM-DD HH:mm").utcOffset(330); // 330 mins = +05:30
+                const istMoment = moment(`${date} ${time}`, "YYYY-MM-DD HH:mm").utcOffset("+05: 30"); // 330 mins = +05:30
                 // Create UTC start and end ranges for that minute
                 const startTimeUtc = istMoment.clone().startOf("minute").utc().toDate();
                 const endTimeUtc = istMoment.clone().endOf("minute").utc().toDate();
@@ -121,14 +121,13 @@ export class StockService {
                 };
             }
             else {
-                const istMoment = moment(date, moment.ISO_8601, true).utcOffset("+05:30");                // Get the start of the day in IST and convert to UTC for filtering
-                const startOfDayUtc = istMoment.clone().startOf("day").utc().toDate();
+                const istMoment = moment(date, moment.ISO_8601, true).utcOffset("+05:30");
 
-                // Get the exact provided time in IST and convert to UTC
-                const endTimeUtc = istMoment.clone().utc().toDate();
+                const startOfDayIst = istMoment.clone().startOf("day").toDate(); // 09:00 AM IST will be 09:00
+                const endOfDayIst = istMoment.clone().endOf("day").toDate();
                 whereCondition.stockTime = {
-                    [Op.gte]: startOfDayUtc, // Greater than or equal to start of day
-                    [Op.lte]: endTimeUtc,
+                    [Op.gte]: startOfDayIst, // Greater than or equal to start of day
+                    [Op.lte]: endOfDayIst,
                 }
             }
             console.log({ whereCondition })
