@@ -83,27 +83,39 @@ export class StockService {
 
     async getStocksTillNow(date?: string | Date) {
         try {
+            // Ensure date is provided
             if (!date) {
                 throw new BadRequestException("Date is required");
             }
 
+            // Convert the provided date to IST (UTC +05:30)
             const istMoment = moment(date, moment.ISO_8601, true).utcOffset("+05:30");
 
+            // Get the start of the day in IST and convert to UTC for filtering
             const startOfDayUtc = istMoment.clone().startOf("day").utc().toDate();
+
+            // Get the exact provided time in IST and convert to UTC
             const endTimeUtc = istMoment.clone().utc().toDate();
 
+            // Log for debugging (optional)
+            console.log("Start of day in UTC:", startOfDayUtc);
+            console.log("End time in UTC:", endTimeUtc);
+
+            // Query the database for stocks within the time range
             const res = await this.stockModel.findAll({
                 where: {
                     stockTime: {
-                        [Op.gte]: startOfDayUtc,
-                        [Op.lte]: endTimeUtc,
+                        [Op.gte]: startOfDayUtc, // Greater than or equal to start of day
+                        [Op.lte]: endTimeUtc,    // Less than or equal to provided time
                     },
                 },
-                order: [["stockTime", "ASC"]],
+                order: [["stockTime", "ASC"]], // Order by stockTime in ascending order
             });
 
+            // Return the response with the fetched data
             return responseSender(STRINGCONST.DATA_FETCHED, HttpStatus.OK, true, res);
         } catch (error) {
+            // If there's an error, throw a BadRequestException
             throw new BadRequestException(error.message);
         }
     }
