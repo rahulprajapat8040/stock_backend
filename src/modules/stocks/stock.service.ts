@@ -109,6 +109,17 @@ export class StockService {
                 throw new BadRequestException("Date is required");
             }
 
+            if (time) {
+                // Parse date + time in IST
+                const istMoment = moment(`${date} ${time}`, "YYYY-MM-DD HH:mm").utcOffset(330); // 330 mins = +05:30
+                // Create UTC start and end ranges for that minute
+                const startTimeUtc = istMoment.clone().startOf("minute").utc().toDate();
+                const endTimeUtc = istMoment.clone().endOf("minute").utc().toDate();
+
+                whereCondition.stockTime = {
+                    [Op.between]: [startTimeUtc, endTimeUtc],
+                };
+            }
             else {
                 const istMoment = moment(date, moment.ISO_8601, true).utcOffset("+05:30");                // Get the start of the day in IST and convert to UTC for filtering
                 const startOfDayUtc = istMoment.clone().startOf("day").utc().toDate();
