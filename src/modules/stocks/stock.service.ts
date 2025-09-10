@@ -111,13 +111,17 @@ export class StockService {
 
             if (time) {
                 // Parse date + time in IST
-                const istMoment = moment(`${date} ${time}`, "YYYY-MM-DD HH:mm").utcOffset("+05: 30"); // 330 mins = +05:30
-                // Create UTC start and end ranges for that minute
-                const startTimeUtc = istMoment.clone().startOf("minute").utc().toDate();
-                const endTimeUtc = istMoment.clone().endOf("minute").utc().toDate();
+                const selectedDateTime = new Date(`${date} ${time}`);
+
+                // Exact timestamp or small range (here: ± 59 seconds)
+                const startTime = new Date(selectedDateTime);
+                startTime.setSeconds(0, 0);
+
+                const endTime = new Date(selectedDateTime);
+                endTime.setSeconds(59, 999);
 
                 whereCondition.stockTime = {
-                    [Op.between]: [startTimeUtc, endTimeUtc],
+                    [Op.between]: [startTime, endTime],
                 };
             }
             else {
