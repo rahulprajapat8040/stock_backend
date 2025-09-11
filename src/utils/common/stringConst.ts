@@ -7,7 +7,10 @@ const STRINGCONST = {
     STOCK_CREATED: "Stock created successfully",
     DATA_FETCHED: "Data fetched successfully",
     DATA_NOT_FOUND: "Data not found",
-    DATA_UPDATED: "Data updated successfully"
+    DATA_UPDATED: "Data updated successfully",
+    OTP_SEND: "OTP sent successfully",
+    INVALID_OTP: "OTP is invalid or expire",
+    OTP_VARIFY: "OTP verified successfully",
 }
 
 export default STRINGCONST;

@@ -4,15 +4,19 @@ import { InjectModel } from "@nestjs/sequelize";
 import { User } from "src/models";
 import * as bcrypt from 'bcryptjs';
 import STRINGCONST from "src/utils/common/stringConst";
-import { responseSender } from "src/utils/helper/funcation.helper";
+import { otpGenerator, responseSender } from "src/utils/helper/funcation.helper";
 import { UserInfoDTO } from "./auth.dto";
 import { Request } from "express";
+import { MailService } from "../email/email.service";
+import { RedisService } from "../redis/redis.service";
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectModel(User) private userModel: typeof User,
-        private jwtService: JwtService
+        private jwtService: JwtService,
+        private mailService: MailService,
+        private redisService: RedisService,
     ) { }
 
     async login(email: string, password: string) {
@@ -66,6 +70,57 @@ export class AuthService {
                 throw new UnauthorizedException("Session invalid");
             }
             return { valid: true };
+        } catch (error) {
+            throw new BadRequestException(error.message)
+        }
+    }
+
+    async sendOTP() {
+        try {
+            const email = process.env.ADMIN_EMAIL
+            const otp = otpGenerator(6)
+            await this.redisService.set(`${email}:otp`, otp);
+            const htmlContent = `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2>Your One-Time Password (OTP)</h2>
+              <p>Hello,</p>
+              <p>Your OTP for login is:</p>
+              <div style="font-size: 24px; font-weight: bold; margin: 20px 0;">
+                ${otp}
+              </div>
+              <p>This OTP is valid for 5 minutes. Do not share it with anyone.</p>
+              <p>Thanks,<br/>Your Team</p>
+            </div>
+          `;
+
+            await this.mailService.sendEmail(htmlContent);
+            return responseSender(STRINGCONST.OTP_SEND, HttpStatus.OK, true, null);
+        } catch (error) {
+            throw new BadRequestException(error.message)
+        }
+    }
+
+    async verifyOTP(otp: string, email: string) {
+        try {
+            const storedOTP = await this.redisService.get(`${email}:otp`);
+            if (storedOTP !== otp) {
+                throw new BadRequestException(STRINGCONST.INVALID_OTP)
+            }
+            return responseSender(STRINGCONST.OTP_VARIFY, HttpStatus.OK, true, null);
+        } catch (error) {
+            throw new BadRequestException(error.message)
+        }
+    }
+
+    async changePassword(newPassword: string, email: string) {
+        try {
+            const user = await this.userModel.findOne({ where: { email } });
+            if (!user) {
+                throw new NotFoundException(STRINGCONST.USER_NOT_FOUND)
+            }
+            const hash = await bcrypt.hash(newPassword, 15);
+            await user.update({ password: hash })
+            return responseSender(STRINGCONST.DATA_UPDATED, HttpStatus.OK, true, user)
         } catch (error) {
             throw new BadRequestException(error.message)
         }

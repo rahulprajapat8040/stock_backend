@@ -125,23 +125,16 @@ export class StockService {
                 };
             }
             else {
-                const istMoment = moment(date, moment.ISO_8601, true).utcOffset("+05:30");
-
+                const istMoment = moment(date, moment.ISO_8601, true).utcOffset("+00:00");
+                console.log(date)
                 const startOfDayIst = istMoment.clone().startOf("day").toDate(); // 09:00 AM IST will be 09:00
-                const endOfDayIst = istMoment.clone().endOf("day").toDate();
+                const endOfDayIst = istMoment.clone().toDate();
                 whereCondition.stockTime = {
                     [Op.gte]: startOfDayIst, // Greater than or equal to start of day
                     [Op.lte]: endOfDayIst,
                 }
             }
             console.log({ whereCondition })
-            // Convert the provided date to IST (UTC +05:30)
-
-            // Log for debugging (optional)
-            // console.log("Start of day in UTC:", startOfDayUtc);
-            // console.log("End time in UTC:", endTimeUtc);
-
-            // Query the database for stocks within the time range
             const res = await this.stockModel.findAll({
                 where: {
                     ...whereCondition,
@@ -158,6 +151,27 @@ export class StockService {
         }
     }
 
+
+    // Helper: convert IST date (at midnight) to UTC
+    async getISTDayRange(date: string | Date) {
+        const IST_OFFSET_MINUTES = 330; // 5 hours 30 minutes
+        const inputDate = new Date(date);
+
+        // Get the Y/M/D in local time
+        const year = inputDate.getFullYear();
+        const month = inputDate.getMonth();
+        const day = inputDate.getDate();
+
+        // Create two Date objects in IST
+        const startIST = new Date(Date.UTC(year, month, day, 0, 0, 0)); // midnight IST
+        const endIST = new Date(Date.UTC(year, month, day, 23, 59, 59, 999)); // end of day IST
+
+        // Convert to UTC by subtracting IST offset
+        const startUTC = new Date(startIST.getTime() - IST_OFFSET_MINUTES * 60000);
+        const endUTC = new Date(endIST.getTime() - IST_OFFSET_MINUTES * 60000);
+
+        return { startUTC, endUTC };
+    }
 
     async editStock(stockId: string, stockTime: Date, stockPrices: string) {
         try {

@@ -5,6 +5,8 @@ import { SequelizeModule } from "@nestjs/sequelize";
 import { User } from "src/models";
 import { AuthController } from "./auth.controller";
 import { AdminSeeder } from "./admin.seeder";
+import { MailService } from "../email/email.service";
+import { RedisService } from "../redis/redis.service";
 
 @Module({
     imports: [
@@ -12,7 +14,7 @@ import { AdminSeeder } from "./admin.seeder";
         JwtModule.register({}),
     ],
     controllers: [AuthController],
-    providers: [AuthService, AdminSeeder]
+    providers: [AuthService, AdminSeeder, RedisService, MailService]
 })
 
 export class AuthModule { }
