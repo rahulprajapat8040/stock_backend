@@ -24,7 +24,6 @@ export class StockService {
     async getAllStocks(date: Date, time?: string) {
         try {
             let whereCondition: any = {};
-            console.log(time)
             if (time) {
                 // Combine date + time
                 const selectedDateTime = new Date(`${date} ${time}`);
@@ -126,7 +125,6 @@ export class StockService {
             }
             else {
                 const istMoment = moment(date, moment.ISO_8601, true).utcOffset("+00:00");
-                console.log(date)
                 const startOfDayIst = istMoment.clone().startOf("day").toDate(); // 09:00 AM IST will be 09:00
                 const endOfDayIst = istMoment.clone().toDate();
                 whereCondition.stockTime = {
@@ -134,7 +132,6 @@ export class StockService {
                     [Op.lte]: endOfDayIst,
                 }
             }
-            console.log({ whereCondition })
             const res = await this.stockModel.findAll({
                 where: {
                     ...whereCondition,

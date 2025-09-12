@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import * as nodemailer from 'nodemailer'
 const trnasporter = nodemailer.createTransport({
     secure: true,
-    host: "stmp.gmail.com",
+    host: "smtp.gmail.com",
     port: 465,
     auth: {
         user: process.env.EMAIL_USER,

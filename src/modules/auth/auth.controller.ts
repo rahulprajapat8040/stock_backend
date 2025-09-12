@@ -20,10 +20,28 @@ export class AuthController {
     }
     // auth.controller.ts
     @Get("validate-session")
-
     async validateSession(@Req() req: Request) {
         return this.authService.validateToken(req)
     }
 
+    @Post('password-reset-req')
+    async sendOTP() {
+        return this.authService.sendOTP()
+    }
 
+    @Post('verify-otp')
+    async verifyOTP(
+        @Body('otp') otp: string,
+        @Body('email') email: string
+    ) {
+        return this.authService.verifyOTP(otp, email)
+    }
+
+    @Post('reset-password')
+    async resetPassword(
+        @Body('newPassword') newPassword: string,
+        @Body('email') email: string
+    ) {
+        return this.authService.changePassword(newPassword, email)
+    }
 }
