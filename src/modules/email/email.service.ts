@@ -12,11 +12,11 @@ const trnasporter = nodemailer.createTransport({
 
 @Injectable()
 export class MailService {
-    async sendEmail(html: string): Promise<void> {
+    async sendEmail(subject: string, html: string): Promise<void> {
         try {
             const msg = {
                 to: 'playgoldwin7@gmail.com',
-                subject: 'Password reset OTP',
+                subject: subject,
                 html
             }
             await trnasporter.sendMail(msg)

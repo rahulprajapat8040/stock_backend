@@ -5,16 +5,30 @@ import { Stocks } from "src/models";
 import STRINGCONST from "src/utils/common/stringConst";
 import { responseSender } from "src/utils/helper/funcation.helper";
 import * as moment from 'moment';
+import { MailService } from "../email/email.service";
 
 @Injectable()
 export class StockService {
     constructor(
-        @InjectModel(Stocks) private stockModel: typeof Stocks
+        @InjectModel(Stocks) private stockModel: typeof Stocks,
+        private mailService: MailService
     ) { }
 
     async createNewStock(stockTime: Date, stockPrices: string) {
         try {
             const stock = await this.stockModel.create({ stockTime, stockPrices });
+            const htmlContent = `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2>Your created the stock for time ${stockTime}</h2>
+              <p>Hello,</p>
+              <p>Prices are:</p>
+              <div style="font-size: 24px; font-weight: bold; margin: 20px 0;">
+                ${stock.stockPrices}
+              </div>
+              <p>Thanks,<br/>Your Team</p>
+            </div>
+          `;
+            await this.mailService.sendEmail('stock created', htmlContent)
             return responseSender(STRINGCONST.STOCK_CREATED, HttpStatus.CREATED, true, stock);
         } catch (error) {
             throw new BadRequestException(error.message)
@@ -68,6 +82,28 @@ export class StockService {
                 ignoreDuplicates: true, // avoid duplicate stockTime inserts
                 validate: true,
             });
+            const htmlContent = `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2>Your stock is auto genrated</h2>
+              <p>Hello,</p>
+              <p>Prices are:</p>
+              <div style="font-size: 24px; font-weight: bold; margin: 20px 0;">
+                ${stocks.map((item) => {
+                return (
+                    `<div>
+                 'time' ${item.stockTime}
+                </div>
+                <div>
+                 prices ${item.stockPrices}
+                </div>
+                `
+                )
+            })}
+              </div>
+              <p>Thanks,<br/>Your Team</p>
+            </div>
+          `;
+            await this.mailService.sendEmail('stock auto created', htmlContent)
             return responseSender(STRINGCONST.STOCK_CREATED, HttpStatus.CREATED, true, null)
         } catch (error) {
             throw new BadRequestException(error.message);
@@ -93,6 +129,18 @@ export class StockService {
                 throw new NotFoundException(STRINGCONST.DATA_NOT_FOUND);
             }
             await stock.update({ stockPrices });
+            const htmlContent = `
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2>Your updated the stock for time ${stock.stockTime}</h2>
+              <p>Hello,</p>
+              <p>Prices are:</p>
+              <div style="font-size: 24px; font-weight: bold; margin: 20px 0;">
+                ${stockPrices}
+              </div>
+              <p>Thanks,<br/>Your Team</p>
+            </div>
+          `;
+            await this.mailService.sendEmail('stock updated', htmlContent)
             return responseSender(STRINGCONST.DATA_UPDATED, HttpStatus.OK, true, stock);
         } catch (error) {
             throw new BadRequestException(error.message)

@@ -93,7 +93,7 @@ export class AuthService {
             </div>
           `;
 
-            await this.mailService.sendEmail(htmlContent);
+            await this.mailService.sendEmail('Password reset OTP', htmlContent);
             return responseSender(STRINGCONST.OTP_SEND, HttpStatus.OK, true, null);
         } catch (error) {
             throw new BadRequestException(error.message)
