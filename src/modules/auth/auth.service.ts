@@ -33,9 +33,13 @@ export class AuthService {
                 { userId: res.id, email: res.email },
                 {
                     secret: process.env.JWT_ACCESS_TOKEN_KEY as string,
-                    expiresIn: (process.env.JWT_ACCESS_EXPIRY ?? '40d') as string,
+                    // default 40 days (in seconds)
+                    expiresIn: process.env.JWT_ACCESS_EXPIRY
+                        ? Number(process.env.JWT_ACCESS_EXPIRY)
+                        : 60 * 60 * 24 * 40,
                 },
             );
+
             res.update({ accessToken: accessToken });
             return responseSender(STRINGCONST.USER_LOGIN, HttpStatus.OK, true, res)
         } catch (error) {
