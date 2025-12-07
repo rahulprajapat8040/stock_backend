@@ -35,7 +35,7 @@ export class AuthService {
                     secret: process.env.JWT_ACCESS_TOKEN_KEY as string,
                     // default 40 days (in seconds)
                     expiresIn: process.env.JWT_ACCESS_EXPIRY
-                        ? Number(process.env.JWT_ACCESS_EXPIRY)
+                        ? process.env.JWT_ACCESS_EXPIRY
                         : 60 * 60 * 24 * 40,
                 },
             );
