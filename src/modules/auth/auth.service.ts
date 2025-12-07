@@ -31,7 +31,10 @@ export class AuthService {
             }
             const accessToken = await this.jwtService.signAsync(
                 { userId: res.id, email: res.email },
-                { secret: process.env.JWT_ACCESS_TOKEN_KEY, expiresIn: process.env.JWT_ACCESS_EXPIRY ?? '40d' }
+                {
+                    secret: process.env.JWT_ACCESS_TOKEN_KEY as string,
+                    expiresIn: (process.env.JWT_ACCESS_EXPIRY ?? '40d') as string,
+                },
             );
             res.update({ accessToken: accessToken });
             return responseSender(STRINGCONST.USER_LOGIN, HttpStatus.OK, true, res)
